@@ -90,7 +90,9 @@ class UtilitiesModule(DashModule):
                     "ContractName": "Contract"
                 },
                 template=template)
-            fig.update_layout(transition_duration=500, legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01, bgcolor='rgba(0,0,0,0)'))
+            fig.update_layout(transition_duration=500, margin_r=0, margin_l=50, legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01,
+                                                                   bgcolor='rgba(0,0,0,0)'))
+
             return fig
 
         return dbc.Card(
