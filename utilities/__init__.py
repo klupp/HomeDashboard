@@ -4,11 +4,11 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 
 from theme import template_theme1, template_theme2
-from utilities.data.data_fetcher import fetch
 
 from klupps_dash_model import DashModule
-from utilities.data.data_fetcher import is_available
+
 from utilities.data.utility_data import UtilityData
+from utilities.data.utility_data_fetcher_csv import UtilityDataFetcherCSV
 
 
 class UtilitiesModule(DashModule):
@@ -17,10 +17,10 @@ class UtilitiesModule(DashModule):
         self.utility_data: UtilityData = None
 
     def is_available(self) -> bool:
-        return is_available()
+        return True
 
     def get_card(self, app: Dash):
-        self.utility_data = fetch(False)
+        self.utility_data = UtilityDataFetcherCSV()
 
         utility_type_chooser = html.Div([
             dbc.Label("Choose Utility Type", html_for="utility_type_chooser"),
