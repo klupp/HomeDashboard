@@ -37,7 +37,14 @@ class UtilitiesModule(DashModule):
         slider = html.Div(
             [
                 dbc.Label("Choose Period", html_for="utility_contract_year_chooser"),
-                dcc.RangeSlider(id="utility_contract_year_chooser", min=2019, max=2022, step=1, value=[2019, 2022], marks={2019: '2019', 2020: '2020', 2021: '2021', 2022: '2022'}),
+                dcc.RangeSlider(
+                    id="utility_contract_year_chooser",
+                    min=2019,
+                    max=2022,
+                    step=1,
+                    value=[2019, 2022],
+                    marks={2019: '2019', 2020: '2020', 2021: '2021', 2022: '2022'}
+                ),
             ]
         )
 
@@ -90,8 +97,12 @@ class UtilitiesModule(DashModule):
                     "ContractName": "Contract"
                 },
                 template=template)
-            fig.update_layout(transition_duration=500, margin_r=0, margin_l=50, legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01,
-                                                                   bgcolor='rgba(0,0,0,0)'))
+            fig.update_layout(
+                transition_duration=500,
+                margin_r=0,
+                margin_l=50,
+                legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01, bgcolor='rgba(0,0,0,0)')
+            )
 
             return fig
 
@@ -101,10 +112,12 @@ class UtilitiesModule(DashModule):
                     dbc.Row([
                         dbc.Col([
                             utility_type_chooser,
-                        ], width="auto"),
+                        ], width="auto")
+                    ]),
+                    dbc.Row([
                         dbc.Col([
                             slider
-                        ], width=4)
+                        ], width=True)
                     ]),
                     dbc.Row([
                         dbc.Col([
