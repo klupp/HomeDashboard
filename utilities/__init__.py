@@ -22,6 +22,19 @@ class UtilitiesModule(DashModule):
     def get_card(self, app: Dash):
         self.utility_data = UtilityDataFetcherCSV()
 
+        new_measurement_button = html.Div([
+            dbc.Label("Measurement", html_for="new_measurement_button"),
+            html.Br(),
+            dbc.Button(
+                "Add New",
+                id="new_measurement_button",
+                external_link=True,
+                target="_blank",
+                href="http://192.168.0.36:5003/",
+                color="primary"
+            )
+        ])
+
         utility_type_chooser = html.Div([
             dbc.Label("Choose Utility Type", html_for="utility_type_chooser"),
             dbc.Select(
@@ -111,7 +124,10 @@ class UtilitiesModule(DashModule):
                 dbc.CardBody([
                     dbc.Row([
                         dbc.Col([
-                            utility_type_chooser,
+                            new_measurement_button
+                        ], width="auto"),
+                        dbc.Col([
+                            utility_type_chooser
                         ], width="auto")
                     ]),
                     dbc.Row([
