@@ -11,6 +11,8 @@ dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.mi
 
 app = Dash(__name__, external_stylesheets=[url_theme1, dbc_css, custom_css])
 
+app.title = "KluppsHomeDash"
+
 theme_switch = html.Span(
     [
         ThemeSwitchAIO(
