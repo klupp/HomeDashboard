@@ -13,6 +13,13 @@ app = Dash(__name__, external_stylesheets=[url_theme1, dbc_css, custom_css])
 
 app.title = "KluppsHomeDash"
 
+refresh_interval = dcc.Interval(
+    id="refresh_interval",
+    disabled=False,
+    interval=300*1000,
+    n_intervals=0
+)
+
 theme_switch = html.Span(
     [
         ThemeSwitchAIO(
@@ -60,6 +67,7 @@ utilities_module.is_available()
 
 app.layout = html.Div([
     navbar,
+    refresh_interval,
     dbc.Row(
         children=[
             dbc.Col(
