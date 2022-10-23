@@ -14,13 +14,12 @@ from utilities.data.utility_data_fetcher_csv import UtilityDataFetcherCSV
 class UtilitiesModule(DashModule):
     def __init__(self):
         super().__init__()
-        self.utility_data: UtilityData = None
 
     def is_available(self) -> bool:
         return True
 
     def get_card(self, app: Dash):
-        self.utility_data = UtilityDataFetcherCSV()
+        utility_data_store = dcc.Store(id='utility_data_store')
 
         new_measurement_button = html.Div([
             dbc.Label("Measurement", html_for="new_measurement_button"),
@@ -38,12 +37,7 @@ class UtilitiesModule(DashModule):
         utility_type_chooser = html.Div([
             dbc.Label("Choose Utility Type", html_for="utility_type_chooser"),
             dbc.Select(
-                id='utility_type_chooser',
-                options=[
-                    {"label": contract_type, "value": contract_type} for contract_type in
-                    self.utility_data.contracts_df.Type.unique()
-                ],
-                value='Gas'
+                id='utility_type_chooser'
             )
         ])
 
@@ -66,14 +60,41 @@ class UtilitiesModule(DashModule):
         )
 
         @app.callback(
+            Output('utility_data_store', 'data'),
+            Input("refresh_interval", "n_intervals")
+        )
+        def refresh_utility_data(value):
+            utility_data = UtilityDataFetcherCSV()
+            utility_data_json = utility_data.to_json(date_format='iso', orient='split')
+            return utility_data_json
+
+        @app.callback(
+            Output('utility_type_chooser', 'options'),
+            Output('utility_type_chooser', 'value'),
+            Input('utility_data_store', 'data'),
+        )
+        def update_utility_type_chooser(utility_data_json):
+            utility_data = UtilityData.from_json(utility_data_json)
+
+            options = [
+                          {"label": contract_type, "value": contract_type} for contract_type in
+                          utility_data.contracts_df.Type.unique()
+                      ]
+            value = options[1]['value']
+
+            return options, value
+
+        @app.callback(
             Output("utility_contract_year_chooser", "min"),
             Output("utility_contract_year_chooser", "max"),
             Output("utility_contract_year_chooser", "value"),
             Output("utility_contract_year_chooser", "marks"),
+            Input('utility_data_store', 'data'),
             Input("utility_type_chooser", "value")
         )
-        def update_contract_chooser(utility_type):
-            contract_df = self.utility_data.contracts_df.copy()
+        def update_contract_chooser(utility_data_json, utility_type):
+            utility_data = UtilityData.from_json(utility_data_json)
+            contract_df = utility_data.contracts_df.copy()
             filtered_df = contract_df[contract_df.Type == utility_type]
             years = filtered_df.ContractYear.unique()
             return \
@@ -85,12 +106,14 @@ class UtilitiesModule(DashModule):
         @app.callback(
             Output("utility_graph", "figure"),
             Input(ThemeSwitchAIO.ids.switch("theme"), "value"),
+            Input('utility_data_store', 'data'),
             Input("utility_type_chooser", "value"),
-            Input("utility_contract_year_chooser", "value")
+            Input("utility_contract_year_chooser", "value"),
         )
-        def create_line_plot(toggle, utility_type, contract_period):
+        def create_line_plot(toggle, utility_data_json, utility_type, contract_period):
+            utility_data = UtilityData.from_json(utility_data_json)
             template = template_theme1 if toggle else template_theme2
-            measurements_df = self.utility_data.measurements_df.copy()
+            measurements_df = utility_data.measurements_df.copy()
             filtered_df = measurements_df[
                 (measurements_df.Type == utility_type) &
                 (measurements_df.ContractYear >= contract_period[0]) &
@@ -121,6 +144,7 @@ class UtilitiesModule(DashModule):
 
         return dbc.Card(
             children=[
+                utility_data_store,
                 dbc.CardBody([
                     dbc.Row([
                         dbc.Col([
