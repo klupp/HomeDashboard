@@ -8,7 +8,7 @@ class UtilityDataFetcherCSV(UtilityData):
     def __init__(
             self,
             utilities_measurements_source='https://raw.githubusercontent.com/klupp/HomeExpenses/main/measurements.csv',
-            utilities_contracts_source='https://raw.githubusercontent.com/klupp/HomeExpenses/main/Contracts.csv'
+            utilities_contracts_source='https://raw.githubusercontent.com/klupp/HomeExpenses/main/contracts/contract.csv'
     ):
         super().__init__()
         self.utilities_measurements_source = utilities_measurements_source
