@@ -1,9 +1,12 @@
+import pandas as pd
 from aio import ThemeSwitchAIO
 from dash import Dash, dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 import plotly.express as px
+import plotly.graph_objects as go
 
 from theme import template_theme1, template_theme2
+import numpy as np
 
 from klupps_dash_model import DashModule
 
@@ -41,6 +44,18 @@ class UtilitiesModule(DashModule):
             )
         ])
 
+        graph_type_chooser = html.Div([
+            dbc.Label("Choose Graph Type", html_for="utility_graph_type_chooser"),
+            dbc.Select(
+                id='utility_graph_type_chooser',
+                options=[
+                    {"label": "Consumption", "value": "Consumption"},
+                    {"label": "Price", "value": "Price"}
+                ],
+                value="Consumption"
+            )
+        ])
+
         slider = html.Div(
             [
                 dbc.Label("Choose Period", html_for="utility_contract_year_chooser"),
@@ -63,7 +78,7 @@ class UtilitiesModule(DashModule):
             Output('utility_data_store', 'data'),
             Input("refresh_interval", "n_intervals")
         )
-        def refresh_utility_data(value):
+        def refresh_utility_data(n_intervals):
             utility_data = UtilityDataFetcherCSV()
             utility_data_json = utility_data.to_json(date_format='iso', orient='split')
             return utility_data_json
@@ -109,35 +124,63 @@ class UtilitiesModule(DashModule):
             Input('utility_data_store', 'data'),
             Input("utility_type_chooser", "value"),
             Input("utility_contract_year_chooser", "value"),
+            Input("utility_graph_type_chooser", "value")
         )
-        def create_line_plot(toggle, utility_data_json, utility_type, contract_period):
+        def create_line_plot(toggle, utility_data_json, utility_type, contract_period, utility_graph_type):
             utility_data = UtilityData.from_json(utility_data_json)
             template = template_theme1 if toggle else template_theme2
             measurements_df = utility_data.measurements_df.copy()
-            filtered_df = measurements_df[
-                (measurements_df.Type == utility_type) &
-                (measurements_df.ContractYear >= contract_period[0]) &
-                (measurements_df.ContractYear <= contract_period[1])
+            contracts_df = utility_data.contracts_df.copy()
+            contracts_df = contracts_df[
+                (contracts_df.Type == utility_type) &
+                (contracts_df.ContractYear >= contract_period[0]) &
+                (contracts_df.ContractYear <= contract_period[1])
             ]
+            measurements_df = measurements_df.merge(contracts_df, left_on='contract', right_on='ID', sort=False)
+            payment_plan_df = utility_data.contract_payment_plan_df.copy()
+            payment_plan_df = payment_plan_df.merge(contracts_df, left_on='ContractID', right_on='ID', sort=False)
+            df = pd.DataFrame(['contract', 'date', 'amount', 'type'])
+            if utility_graph_type == 'Price':
+                unit_type = 'EUR'
+                mdf = measurements_df[['date', 'aggregate_price', 'contract']].copy()
+                mdf.columns = ['date', 'amount', 'contract']
+                mdf['type'] = 'Spent'
+
+                pdf = payment_plan_df[['PaymentDate', 'AggregatePaymentAmount', 'ContractID']].copy()
+                pdf.columns = ['date', 'amount', 'contract']
+                pdf['type'] = 'Payment'
+
+                df = pd.concat([df, mdf, pdf], ignore_index=True)
+            else:
+                unit_type = 'kWh'
+                mdf = measurements_df[['date', 'aggregate_consumption', 'contract']].copy()
+                mdf.columns = ['date', 'amount', 'contract']
+                mdf['type'] = 'Consumed'
+                df = pd.concat([df, mdf], ignore_index=True)
+
+            df['date'] = pd.to_datetime(df['date'])
+            df.sort_values(by='date', inplace=True, ignore_index=True)
             fig = px.line(
-                filtered_df,
+                df,
                 x='date',
-                y='aggregate_consumption',
-                color='ContractName',
+                y='amount',
+                color='contract',
+                title=f"{utility_type} {utility_graph_type} by Contract",
+                hover_data={'amount': ':.2f'},
+                line_dash='type',
                 markers=True,
-                title=f"{utility_type} Consumption by Contract",
-                hover_data={'aggregate_consumption': ':.2f'},
                 labels={
                     "date": "Date of Measurement",
-                    "aggregate_consumption": f"Aggregate Consumption of {utility_type} in kWh",
-                    "ContractName": "Contract"
+                    "amount": f"Cumulative {utility_graph_type} of {utility_type} in {unit_type}",
+                    "contract": "Contract",
+                    "type": "Type"
                 },
                 template=template)
             fig.update_layout(
                 transition_duration=500,
                 margin_r=0,
                 margin_l=50,
-                legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01, bgcolor='rgba(0,0,0,0)')
+                # legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01, bgcolor='rgba(0,0,0,0)')
             )
 
             return fig
@@ -152,6 +195,9 @@ class UtilitiesModule(DashModule):
                         ], width="auto"),
                         dbc.Col([
                             utility_type_chooser
+                        ], width="auto"),
+                        dbc.Col([
+                            graph_type_chooser
                         ], width="auto")
                     ]),
                     dbc.Row([

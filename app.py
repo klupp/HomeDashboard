@@ -74,7 +74,7 @@ app.layout = html.Div([
                 children=[
                     utilities_module.get_card(app)
                 ],
-                width="12", lg=6, xl=4
+                width="12", lg=6, xl=6
             ),
         ],
         justify='around'
