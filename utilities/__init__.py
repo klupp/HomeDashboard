@@ -136,6 +136,7 @@ class UtilitiesModule(DashModule):
                 (contracts_df.ContractYear >= contract_period[0]) &
                 (contracts_df.ContractYear <= contract_period[1])
             ]
+            c = dict(zip(sorted(contracts_df['ID'].unique()), px.colors.qualitative.G10))
             measurements_df = measurements_df.merge(contracts_df, left_on='contract', right_on='ID', sort=False)
             payment_plan_df = utility_data.contract_payment_plan_df.copy()
             payment_plan_df = payment_plan_df.merge(contracts_df, left_on='ContractID', right_on='ID', sort=False)
@@ -160,27 +161,34 @@ class UtilitiesModule(DashModule):
 
             df['date'] = pd.to_datetime(df['date'])
             df.sort_values(by='date', inplace=True, ignore_index=True)
+            print(c)
             fig = px.line(
                 df,
                 x='date',
                 y='amount',
                 color='contract',
+                color_discrete_map=c,
                 title=f"{utility_type} {utility_graph_type} by Contract",
                 hover_data={'amount': ':.2f'},
                 line_dash='type',
-                markers=True,
+                markers=False,
                 labels={
-                    "date": "Date of Measurement",
-                    "amount": f"Cumulative {utility_graph_type} of {utility_type} in {unit_type}",
+                    "date": "",
+                    "amount": f"{unit_type}",
                     "contract": "Contract",
-                    "type": "Type"
+                    "type": ""
                 },
                 template=template)
             fig.update_layout(
                 transition_duration=500,
                 margin_r=0,
-                margin_l=50,
-                # legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01, bgcolor='rgba(0,0,0,0)')
+                margin_l=0,
+                legend=dict(
+                    orientation='h'
+                ),
+                title=dict(
+                    xanchor='center', x=0.5
+                )
             )
 
             return fig
